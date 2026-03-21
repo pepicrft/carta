@@ -55,8 +55,8 @@ defmodule Carta do
   def render(html, opts \\ []) when is_binary(html) do
     opts = Keyword.merge(@default_opts, opts)
 
-    BrowserPool.checkout(fn ws_url ->
-      case Browser.capture(ws_url, html, opts) do
+    BrowserPool.checkout(fn browser ->
+      case Browser.capture(browser, html, opts) do
         {:ok, _binary} = ok -> {ok, :ok}
         {:error, _} = error -> {error, :remove}
       end

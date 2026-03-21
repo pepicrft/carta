@@ -2,8 +2,8 @@ defmodule Carta.BrowserPool do
   @moduledoc """
   A NimblePool that manages a pool of warm headless Chrome instances.
 
-  Each pool resource is a running Chrome process with its CDP WebSocket URL,
-  ready to accept navigation and screenshot commands without cold-start overhead.
+  Each pool resource is a `Carta.Browser` GenServer process,
+  ready to accept screenshot commands without cold-start overhead.
   """
 
   @behaviour NimblePool
@@ -24,16 +24,12 @@ defmodule Carta.BrowserPool do
   end
 
   @doc """
-  Checks out a warm Chrome instance, runs the given function with its
-  CDP WebSocket URL, and checks it back in.
-
-  The function receives the WebSocket URL and must return `{result, instruction}`
-  where instruction is `:ok` to return the resource to the pool or `:remove`
-  to discard it.
+  Checks out a warm Browser process, runs the given function with it,
+  and checks it back in.
   """
-  def checkout(fun, timeout \\ 10_000) do
-    NimblePool.checkout!(__MODULE__, :checkout, fn _from, ws_url ->
-      fun.(ws_url)
+  def checkout(fun, timeout \\ 30_000) do
+    NimblePool.checkout!(__MODULE__, :checkout, fn _from, browser ->
+      fun.(browser)
     end, timeout)
   end
 
@@ -41,11 +37,9 @@ defmodule Carta.BrowserPool do
 
   @impl NimblePool
   def init_worker(opts) do
-    chrome_path = Keyword.get(opts, :chrome_path)
-
-    case Browser.start(chrome_path) do
-      {:ok, handle, ws_url} ->
-        {:ok, ws_url, %{handle: handle, opts: opts}}
+    case Browser.start_link(opts) do
+      {:ok, browser} ->
+        {:ok, browser, opts}
 
       {:error, reason} ->
         {:error, reason}
@@ -53,22 +47,22 @@ defmodule Carta.BrowserPool do
   end
 
   @impl NimblePool
-  def handle_checkout(:checkout, _from, ws_url, pool_state) do
-    {:ok, ws_url, ws_url, pool_state}
+  def handle_checkout(:checkout, _from, browser, pool_state) do
+    {:ok, browser, browser, pool_state}
   end
 
   @impl NimblePool
-  def handle_checkin(:ok, _from, ws_url, pool_state) do
-    {:ok, ws_url, pool_state}
+  def handle_checkin(:ok, _from, browser, pool_state) do
+    {:ok, browser, pool_state}
   end
 
-  def handle_checkin(:remove, _from, _ws_url, pool_state) do
+  def handle_checkin(:remove, _from, _browser, pool_state) do
     {:remove, :closed, pool_state}
   end
 
   @impl NimblePool
-  def terminate_worker(_reason, _ws_url, %{handle: handle} = pool_state) do
-    Browser.stop(handle)
+  def terminate_worker(_reason, browser, pool_state) do
+    GenServer.stop(browser, :normal)
     {:ok, pool_state}
   end
 end

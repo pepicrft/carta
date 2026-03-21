@@ -1,24 +1,40 @@
 defmodule Carta.Browser do
   @moduledoc """
-  Manages headless Chrome/Chromium process lifecycle.
+  A GenServer that manages a headless Chrome/Chromium instance.
 
-  Handles starting and stopping Chrome instances, and provides
-  screenshot capture using a CDP WebSocket connection.
+  Each Browser process owns a single Chrome process and its CDP WebSocket URL.
+  Screenshots are taken via `capture/3` which is a synchronous GenServer call.
   """
+
+  use GenServer
 
   alias Carta.CDP
 
-  @doc """
-  Starts a headless Chrome instance and returns its handle and CDP WebSocket URL.
+  # Client API
 
-  The `chrome_path` can be `nil` to auto-detect.
+  @doc """
+  Starts a Browser process that launches a headless Chrome instance.
   """
-  @spec start(String.t() | nil) :: {:ok, term(), String.t()} | {:error, term()}
-  def start(chrome_path \\ nil) do
-    chrome_path = chrome_path || find_chrome()
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts)
+  end
+
+  @doc """
+  Captures a screenshot of the given HTML content as a JPEG binary.
+  """
+  @spec capture(pid(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def capture(browser, html, opts) do
+    GenServer.call(browser, {:capture, html, opts}, 30_000)
+  end
+
+  # GenServer Callbacks
+
+  @impl GenServer
+  def init(opts) do
+    chrome_path = Keyword.get(opts, :chrome_path) || find_chrome()
 
     if is_nil(chrome_path) do
-      {:error, :chrome_not_found}
+      {:stop, :chrome_not_found}
     else
       port = find_available_port()
       {:ok, user_data_dir} = Briefly.create(directory: true)
@@ -34,38 +50,23 @@ defmodule Carta.Browser do
         "about:blank"
       ]
 
-      pid =
-        spawn(fn ->
+      chrome_pid =
+        spawn_link(fn ->
           MuonTrap.cmd(chrome_path, args, stderr_to_stdout: true)
         end)
 
       case wait_for_devtools(port) do
         {:ok, ws_url} ->
-          {:ok, pid, ws_url}
+          {:ok, %{chrome_pid: chrome_pid, ws_url: ws_url}}
 
-        {:error, _} = error ->
-          Process.exit(pid, :kill)
-          error
+        {:error, reason} ->
+          {:stop, reason}
       end
     end
   end
 
-  @doc """
-  Stops a Chrome instance previously started with `start/1`.
-  """
-  @spec stop(pid()) :: :ok
-  def stop(pid) do
-    Process.exit(pid, :kill)
-    :ok
-  end
-
-  @doc """
-  Captures a screenshot using a CDP WebSocket URL from a pooled Chrome instance.
-
-  Writes the HTML to a temp file, navigates, captures, and cleans up.
-  """
-  @spec capture(String.t(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def capture(ws_url, html, opts) do
+  @impl GenServer
+  def handle_call({:capture, html, opts}, _from, state) do
     width = Keyword.fetch!(opts, :width)
     height = Keyword.fetch!(opts, :height)
     quality = Keyword.fetch!(opts, :quality)
@@ -73,8 +74,20 @@ defmodule Carta.Browser do
     {:ok, html_path} = Briefly.create(extname: ".html")
     File.write!(html_path, html)
     file_url = "file://#{html_path}"
-    take_screenshot(ws_url, file_url, width, height, quality)
+
+    result = take_screenshot(state.ws_url, file_url, width, height, quality)
+    {:reply, result, state}
   end
+
+  @impl GenServer
+  def terminate(_reason, %{chrome_pid: chrome_pid}) do
+    Process.exit(chrome_pid, :kill)
+    :ok
+  end
+
+  def terminate(_reason, _state), do: :ok
+
+  # Private
 
   defp take_screenshot(ws_url, file_url, width, height, quality) do
     with {:ok, cdp} <- CDP.connect(ws_url),
