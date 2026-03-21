@@ -19,9 +19,24 @@ defmodule Carta do
       # Render an EEx template with assigns
       {:ok, jpeg_binary} = Carta.render({:template, "templates/og.html.eex", title: "My Post"})
 
-      # Render directly to a file
-      :ok = Carta.render_to_file("<h1>Hello</h1>", "og-image.jpg")
-      :ok = Carta.render_to_file({:template, "templates/og.html.eex", title: "My Post"}, "og.jpg")
+  ## Caching
+
+  Rendering is expensive — it launches a browser session for each call.
+  You should cache the result and only re-render when the inputs change.
+  Use `cache_key/2` to derive a stable hash from the input and options,
+  then use it as a key in your own cache (ETS, filesystem, CDN, etc.):
+
+      key = Carta.cache_key({:template, "og.html.eex", title: "My Post"})
+
+      case MyCache.get(key) do
+        nil ->
+          {:ok, jpg} = Carta.render({:template, "og.html.eex", title: "My Post"})
+          MyCache.put(key, jpg)
+          jpg
+
+        cached ->
+          cached
+      end
 
   ## Configuration
 
@@ -78,17 +93,17 @@ defmodule Carta do
   end
 
   @doc """
-  Renders HTML or a template to a JPEG file at the given path.
+  Returns a stable cache key (hex-encoded hash) for the given input and options.
 
-  Accepts either an HTML string or a `{:template, path, assigns}` tuple.
+  The key is derived from the full input (HTML string or template tuple)
+  and the render options, so it changes when any parameter changes.
 
-  Returns `:ok` on success or `{:error, reason}` on failure.
+      Carta.cache_key("<h1>Hello</h1>")
+      Carta.cache_key({:template, "og.html.eex", title: "Post"}, width: 800)
   """
-  @spec render_to_file(input(), String.t(), keyword()) :: :ok | {:error, term()}
-  def render_to_file(input, output_path, opts \\ []) do
-    case render(input, opts) do
-      {:ok, jpeg_binary} -> File.write(output_path, jpeg_binary)
-      {:error, _} = error -> error
-    end
+  @spec cache_key(input(), keyword()) :: String.t()
+  def cache_key(input, opts \\ []) do
+    opts = Keyword.merge(@default_opts, opts)
+    :crypto.hash(:sha256, :erlang.term_to_binary({input, opts})) |> Base.hex_encode32(case: :lower, padding: false)
   end
 end

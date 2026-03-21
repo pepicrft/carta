@@ -49,16 +49,28 @@ defmodule CartaTest do
     end
   end
 
-  describe "render_to_file/3" do
-    test "writes JPEG to the specified path" do
-      html = "<html><body><h1>File Test</h1></body></html>"
-      output_path = Path.join(System.tmp_dir!(), "carta_test_#{:erlang.unique_integer([:positive])}.jpg")
+  describe "cache_key/2" do
+    test "returns a stable hash for the same input" do
+      key1 = Carta.cache_key("<h1>Hello</h1>")
+      key2 = Carta.cache_key("<h1>Hello</h1>")
+      assert key1 == key2
+    end
 
-      on_exit(fn -> File.rm(output_path) end)
+    test "returns different keys for different inputs" do
+      key1 = Carta.cache_key("<h1>Hello</h1>")
+      key2 = Carta.cache_key("<h1>World</h1>")
+      assert key1 != key2
+    end
 
-      assert :ok = Carta.render_to_file(html, output_path)
-      assert File.exists?(output_path)
-      assert <<0xFF, 0xD8, 0xFF, _rest::binary>> = File.read!(output_path)
+    test "returns different keys for different options" do
+      key1 = Carta.cache_key("<h1>Hello</h1>", width: 800)
+      key2 = Carta.cache_key("<h1>Hello</h1>", width: 1200)
+      assert key1 != key2
+    end
+
+    test "works with template tuples" do
+      key = Carta.cache_key({:template, "og.html.eex", title: "Post"})
+      assert is_binary(key)
     end
   end
 end
