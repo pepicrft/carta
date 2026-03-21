@@ -41,6 +41,11 @@ jobs:
             build-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
             build-${{ runner.os }}-main-
 
+      - name: Install Chromium
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
       - name: Fetch dependencies
         run: mix deps.get
 
@@ -78,6 +83,11 @@ jobs:
           restore-keys: |
             build-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
             build-${{ runner.os }}-main-
+
+      - name: Install Chromium
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
       - name: Fetch dependencies
         run: mix deps.get
