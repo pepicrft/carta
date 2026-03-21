@@ -1,0 +1,154 @@
+defmodule Carta.Browser do
+  @moduledoc """
+  Manages a headless Chrome/Chromium instance to capture screenshots
+  of HTML content via the Chrome DevTools Protocol (CDP).
+  """
+
+  alias Carta.CDP
+
+  @doc """
+  Captures a screenshot of the given HTML content as a JPEG binary.
+
+  Starts a headless Chrome instance, loads the HTML, takes a screenshot,
+  and shuts down Chrome.
+  """
+  @spec capture(String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def capture(html, opts) do
+    width = Keyword.fetch!(opts, :width)
+    height = Keyword.fetch!(opts, :height)
+    quality = Keyword.fetch!(opts, :quality)
+
+    tmp_dir = System.tmp_dir!()
+    html_path = Path.join(tmp_dir, "carta_#{:erlang.unique_integer([:positive])}.html")
+
+    try do
+      File.write!(html_path, html)
+      file_url = "file://#{html_path}"
+
+      with {:ok, chrome_pid, ws_url} <- start_chrome(opts),
+           {:ok, jpeg_binary} <- take_screenshot(ws_url, file_url, width, height, quality) do
+        stop_chrome(chrome_pid)
+        {:ok, jpeg_binary}
+      else
+        {:error, _} = error ->
+          error
+      end
+    after
+      File.rm(html_path)
+    end
+  end
+
+  defp start_chrome(opts) do
+    chrome_path = Keyword.get(opts, :chrome_path) || find_chrome()
+
+    if is_nil(chrome_path) do
+      {:error, :chrome_not_found}
+    else
+      port = find_available_port()
+      user_data_dir = Path.join(System.tmp_dir!(), "carta_chrome_#{:erlang.unique_integer([:positive])}")
+
+      args = [
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--hide-scrollbars",
+        "--remote-debugging-port=#{port}",
+        "--user-data-dir=#{user_data_dir}",
+        "about:blank"
+      ]
+
+      pid =
+        spawn(fn ->
+          MuonTrap.cmd(chrome_path, args, stderr_to_stdout: true)
+        end)
+
+      case wait_for_devtools(port) do
+        {:ok, ws_url} ->
+          {:ok, {pid, user_data_dir}, ws_url}
+
+        {:error, _} = error ->
+          Process.exit(pid, :kill)
+          File.rm_rf(user_data_dir)
+          error
+      end
+    end
+  end
+
+  defp stop_chrome({pid, user_data_dir}) do
+    Process.exit(pid, :kill)
+    File.rm_rf(user_data_dir)
+  end
+
+  defp take_screenshot(ws_url, file_url, width, height, quality) do
+    with {:ok, cdp} <- CDP.connect(ws_url),
+         :ok <- CDP.set_device_metrics(cdp, width, height),
+         :ok <- CDP.navigate(cdp, file_url),
+         {:ok, data} <- CDP.capture_screenshot(cdp, "jpeg", quality) do
+      CDP.disconnect(cdp)
+      {:ok, Base.decode64!(data)}
+    end
+  end
+
+  defp find_chrome do
+    paths =
+      case :os.type() do
+        {:unix, :darwin} ->
+          [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+            "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
+          ]
+
+        {:unix, _} ->
+          [
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser"
+          ]
+
+        {:win32, _} ->
+          [
+            "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+          ]
+      end
+
+    Enum.find(paths, fn path ->
+      case System.find_executable(path) do
+        nil -> File.exists?(path)
+        _ -> true
+      end
+    end)
+  end
+
+  defp find_available_port do
+    {:ok, socket} = :gen_tcp.listen(0, reuseaddr: true)
+    {:ok, port} = :inet.port(socket)
+    :gen_tcp.close(socket)
+    port
+  end
+
+  defp wait_for_devtools(port, attempts \\ 50) do
+    wait_for_devtools(port, attempts, 0)
+  end
+
+  defp wait_for_devtools(_port, max_attempts, attempt) when attempt >= max_attempts do
+    {:error, :devtools_timeout}
+  end
+
+  defp wait_for_devtools(port, max_attempts, attempt) do
+    url = ~c"http://127.0.0.1:#{port}/json/version"
+
+    case :httpc.request(:get, {url, []}, [timeout: 1000], []) do
+      {:ok, {{_, 200, _}, _, body}} ->
+        info = Jason.decode!(to_string(body))
+        {:ok, info["webSocketDebuggerUrl"]}
+
+      _ ->
+        Process.sleep(100)
+        wait_for_devtools(port, max_attempts, attempt + 1)
+    end
+  end
+end
