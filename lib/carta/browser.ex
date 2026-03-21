@@ -21,7 +21,7 @@ defmodule Carta.Browser do
       {:error, :chrome_not_found}
     else
       port = find_available_port()
-      user_data_dir = Path.join(System.tmp_dir!(), "carta_chrome_#{:erlang.unique_integer([:positive])}")
+      {:ok, user_data_dir} = Briefly.create(directory: true)
 
       args = [
         "--headless=new",
@@ -45,7 +45,6 @@ defmodule Carta.Browser do
 
         {:error, _} = error ->
           Process.exit(pid, :kill)
-          File.rm_rf(user_data_dir)
           error
       end
     end
@@ -55,9 +54,8 @@ defmodule Carta.Browser do
   Stops a Chrome instance previously started with `start/1`.
   """
   @spec stop(term()) :: :ok
-  def stop({pid, user_data_dir}) do
+  def stop({pid, _user_data_dir}) do
     Process.exit(pid, :kill)
-    File.rm_rf(user_data_dir)
     :ok
   end
 
@@ -72,16 +70,10 @@ defmodule Carta.Browser do
     height = Keyword.fetch!(opts, :height)
     quality = Keyword.fetch!(opts, :quality)
 
-    tmp_dir = System.tmp_dir!()
-    html_path = Path.join(tmp_dir, "carta_#{:erlang.unique_integer([:positive])}.html")
-
-    try do
-      File.write!(html_path, html)
-      file_url = "file://#{html_path}"
-      take_screenshot(ws_url, file_url, width, height, quality)
-    after
-      File.rm(html_path)
-    end
+    {:ok, html_path} = Briefly.create(extname: ".html")
+    File.write!(html_path, html)
+    file_url = "file://#{html_path}"
+    take_screenshot(ws_url, file_url, width, height, quality)
   end
 
   defp take_screenshot(ws_url, file_url, width, height, quality) do
@@ -147,7 +139,7 @@ defmodule Carta.Browser do
 
     case :httpc.request(:get, {url, []}, [timeout: 1000], []) do
       {:ok, {{_, 200, _}, _, body}} ->
-        info = Jason.decode!(to_string(body))
+        info = JSON.decode!(to_string(body))
         {:ok, info["webSocketDebuggerUrl"]}
 
       _ ->

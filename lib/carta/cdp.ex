@@ -120,7 +120,7 @@ defmodule Carta.CDP do
     id = Map.get(state, :next_id, 1)
 
     message =
-      Jason.encode!(%{
+      JSON.encode!(%{
         id: id,
         method: method,
         params: params
@@ -136,7 +136,7 @@ defmodule Carta.CDP do
 
   @impl WebSockex
   def handle_frame({:text, msg}, state) do
-    case Jason.decode(msg) do
+    case JSON.decode(msg) do
       {:ok, %{"id" => id, "result" => result}} ->
         case Map.get(state.pending, id) do
           {caller, ref} ->

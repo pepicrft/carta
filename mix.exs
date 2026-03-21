@@ -8,7 +8,7 @@ defmodule Carta.MixProject do
     [
       app: :carta,
       version: @version,
-      elixir: "~> 1.17",
+      elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
@@ -42,8 +42,8 @@ defmodule Carta.MixProject do
       # WebSocket client for Chrome DevTools Protocol
       {:websockex, "~> 0.4"},
 
-      # JSON encoding/decoding
-      {:jason, "~> 1.4"},
+      # Temporary file management
+      {:briefly, "~> 0.5"},
 
       # Development & Testing
       {:quokka, "~> 2.12", only: [:dev, :test], runtime: false},
