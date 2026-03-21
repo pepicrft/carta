@@ -14,7 +14,7 @@ defmodule Carta.MixProject do
       docs: docs(),
       package: package(),
       name: "Carta",
-      description: "Generate OG images from HTML templates using a headless browser",
+      description: "Generate images from HTML templates using a headless browser",
       source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases()

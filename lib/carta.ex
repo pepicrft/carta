@@ -1,9 +1,10 @@
 defmodule Carta do
   @moduledoc """
-  Generate OG images from HTML templates using a headless browser.
+  Generate images from HTML templates using a headless browser.
 
   Carta renders HTML content in a headless Chrome/Chromium browser and captures
-  it as a JPEG image, ideal for generating Open Graph images for social media.
+  it as a JPEG image. Useful for Open Graph images, social media cards, email
+  banners, certificates, invoices, badges — anything you can build with HTML and CSS.
 
   A pool of warm Chrome instances is managed automatically via the application
   supervision tree, eliminating cold-start overhead on each render.
