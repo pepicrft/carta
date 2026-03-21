@@ -32,10 +32,10 @@ jobs:
           path: |
             deps
             _build
-          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          key: mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
-            mix-${{ runner.os }}-
+            mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
+            mix-${{ runner.os }}-main-
 
       - name: Fetch dependencies
         run: mix deps.get
@@ -66,10 +66,10 @@ jobs:
           path: |
             deps
             _build
-          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          key: mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
-            mix-${{ runner.os }}-
+            mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
+            mix-${{ runner.os }}-main-
 
       - name: Fetch dependencies
         run: mix deps.get
@@ -97,10 +97,10 @@ jobs:
           path: |
             deps
             _build
-          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          key: mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-${{ hashFiles('mix.lock') }}
           restore-keys: |
-            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
-            mix-${{ runner.os }}-
+            mix-${{ runner.os }}-${{ github.head_ref || github.ref_name }}-
+            mix-${{ runner.os }}-main-
 
       - name: Fetch dependencies
         run: mix deps.get
