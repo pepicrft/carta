@@ -41,7 +41,7 @@ defmodule Carta.Browser do
 
       case wait_for_devtools(port) do
         {:ok, ws_url} ->
-          {:ok, {pid, user_data_dir}, ws_url}
+          {:ok, pid, ws_url}
 
         {:error, _} = error ->
           Process.exit(pid, :kill)
@@ -53,8 +53,8 @@ defmodule Carta.Browser do
   @doc """
   Stops a Chrome instance previously started with `start/1`.
   """
-  @spec stop(term()) :: :ok
-  def stop({pid, _user_data_dir}) do
+  @spec stop(pid()) :: :ok
+  def stop(pid) do
     Process.exit(pid, :kill)
     :ok
   end
