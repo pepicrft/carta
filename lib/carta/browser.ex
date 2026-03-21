@@ -148,16 +148,24 @@ defmodule Carta.Browser do
   end
 
   defp wait_for_devtools(port, max_attempts, attempt) do
-    url = ~c"http://127.0.0.1:#{port}/json/version"
+    url = ~c"http://127.0.0.1:#{port}/json/list"
 
     case :httpc.request(:get, {url, []}, [timeout: 1000], []) do
       {:ok, {{_, 200, _}, _, body}} ->
-        info = JSON.decode!(to_string(body))
-        {:ok, info["webSocketDebuggerUrl"]}
+        targets = JSON.decode!(to_string(body))
+
+        case Enum.find(targets, &(&1["type"] == "page")) do
+          %{"webSocketDebuggerUrl" => ws_url} -> {:ok, ws_url}
+          _ -> retry_devtools(port, max_attempts, attempt)
+        end
 
       _ ->
-        Process.sleep(100)
-        wait_for_devtools(port, max_attempts, attempt + 1)
+        retry_devtools(port, max_attempts, attempt)
     end
+  end
+
+  defp retry_devtools(port, max_attempts, attempt) do
+    Process.sleep(100)
+    wait_for_devtools(port, max_attempts, attempt + 1)
   end
 end
