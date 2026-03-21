@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          current_version=$(elixir scripts/version.exs current)
+          current_version=$(mix version current)
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
 
           if [ -n "$latest_tag" ]; then
@@ -65,7 +65,7 @@ jobs:
           fi
 
           if [ -n "$latest_tag" ]; then
-            next_version=$(elixir scripts/version.exs bump "$latest_tag" "$bump_type")
+            next_version=$(mix version bump "$latest_tag" "$bump_type")
             git cliff --tag "$next_version" -o CHANGELOG.next.md
             git cliff --tag "$next_version" --unreleased --strip all -o RELEASE_NOTES.md
           else
@@ -82,7 +82,7 @@ jobs:
       - name: Update version and changelog
         if: steps.plan.outputs.should_release == 'true'
         run: |
-          elixir scripts/version.exs set "${{ steps.plan.outputs.next_version }}"
+          mix version set "${{ steps.plan.outputs.next_version }}"
           mv CHANGELOG.next.md CHANGELOG.md
 
       - name: Validate Hex package

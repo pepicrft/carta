@@ -1,13 +1,27 @@
-defmodule Carta.ReleaseVersion do
+defmodule Mix.Tasks.Version do
+  @shortdoc "Manage the project version in mix.exs"
+  @moduledoc """
+  Manage the project version in mix.exs.
+
+  ## Usage
+
+      mix version current          # Print the current version
+      mix version bump 1.2.3 minor # Bump the given version (prints 1.3.0)
+      mix version set 2.0.0        # Update @version in mix.exs
+  """
+
+  use Mix.Task
+
   @version_regex ~r/@version "(\d+)\.(\d+)\.(\d+)"/
 
-  def main(["current"]) do
+  @impl Mix.Task
+  def run(["current"]) do
     mix_exs()
     |> current_version!()
     |> IO.puts()
   end
 
-  def main(["bump", version, part]) do
+  def run(["bump", version, part]) do
     version
     |> parse_version!()
     |> bump(part)
@@ -15,28 +29,27 @@ defmodule Carta.ReleaseVersion do
     |> IO.puts()
   end
 
-  def main(["set", version]) do
+  def run(["set", version]) do
     path = "mix.exs"
     contents = File.read!(path)
     current = current_version!(contents)
-    updated = Regex.replace(@version_regex, contents, ~s(@version "#{version}"), global: false)
 
     if current == version do
       IO.puts(version)
-      System.halt(0)
-    end
+    else
+      updated = Regex.replace(@version_regex, contents, ~s(@version "#{version}"), global: false)
 
-    if contents == updated do
-      raise "Unable to update #{path} to #{version}"
-    end
+      if contents == updated do
+        Mix.raise("Unable to update #{path} to #{version}")
+      end
 
-    File.write!(path, updated)
-    IO.puts(version)
+      File.write!(path, updated)
+      IO.puts(version)
+    end
   end
 
-  def main(_args) do
-    IO.puts(:stderr, "usage: elixir scripts/version.exs [current|bump <version> <major|minor|patch>|set <version>]")
-    System.halt(1)
+  def run(_args) do
+    Mix.raise("usage: mix version [current|bump <version> <major|minor|patch>|set <version>]")
   end
 
   defp mix_exs do
@@ -46,7 +59,7 @@ defmodule Carta.ReleaseVersion do
   defp current_version!(contents) do
     case Regex.run(@version_regex, contents, capture: :all_but_first) do
       [major, minor, patch] -> Enum.join([major, minor, patch], ".")
-      _ -> raise "Unable to find @version in mix.exs"
+      _ -> Mix.raise("Unable to find @version in mix.exs")
     end
   end
 
@@ -56,16 +69,14 @@ defmodule Carta.ReleaseVersion do
         {String.to_integer(major), String.to_integer(minor), String.to_integer(patch)}
 
       _ ->
-        raise "Invalid version: #{version}"
+        Mix.raise("Invalid version: #{version}")
     end
   end
 
   defp bump({major, _minor, _patch}, "major"), do: {major + 1, 0, 0}
   defp bump({major, minor, _patch}, "minor"), do: {major, minor + 1, 0}
   defp bump({major, minor, patch}, "patch"), do: {major, minor, patch + 1}
-  defp bump(_version, part), do: raise("Unknown bump type: #{part}")
+  defp bump(_version, part), do: Mix.raise("Unknown bump type: #{part}")
 
   defp format_version({major, minor, patch}), do: "#{major}.#{minor}.#{patch}"
 end
-
-Carta.ReleaseVersion.main(System.argv())
