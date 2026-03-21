@@ -1,5 +1,5 @@
 defmodule CartaTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   describe "render/2 with inline HTML" do
     test "renders HTML to a JPEG binary" do
