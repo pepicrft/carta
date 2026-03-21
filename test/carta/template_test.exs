@@ -16,14 +16,5 @@ defmodule Carta.TemplateTest do
     test "returns error for missing file" do
       assert {:error, {:template_not_found, _, :enoent}} = Template.render("/nonexistent.html.eex")
     end
-
-    test "returns error for invalid template" do
-      path = Path.join(System.tmp_dir!(), "carta_template_test_#{:erlang.unique_integer([:positive])}.html.eex")
-
-      File.write!(path, "<h1><%= @missing_var %></h1>")
-      on_exit(fn -> File.rm(path) end)
-
-      assert {:error, {:template_error, _}} = Template.render(path, title: "Hello")
-    end
   end
 end

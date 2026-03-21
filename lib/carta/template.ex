@@ -18,7 +18,5 @@ defmodule Carta.Template do
       {:error, reason} ->
         {:error, {:template_not_found, template_path, reason}}
     end
-  rescue
-    e -> {:error, {:template_error, Exception.message(e)}}
   end
 end
