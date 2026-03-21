@@ -1,9 +1,9 @@
 defmodule Carta.TemplateTest do
   use ExUnit.Case, async: true
 
-  @moduletag :tmp_dir
-
   alias Carta.Template
+
+  @moduletag :tmp_dir
 
   describe "render/2" do
     test "renders an EEx template with a single assign", %{tmp_dir: tmp_dir} do

@@ -28,9 +28,14 @@ defmodule Carta.BrowserPool do
   and checks it back in.
   """
   def checkout(fun, timeout \\ 30_000) do
-    NimblePool.checkout!(__MODULE__, :checkout, fn _from, browser ->
-      fun.(browser)
-    end, timeout)
+    NimblePool.checkout!(
+      __MODULE__,
+      :checkout,
+      fn _from, browser ->
+        fun.(browser)
+      end,
+      timeout
+    )
   end
 
   # NimblePool Callbacks

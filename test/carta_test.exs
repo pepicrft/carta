@@ -39,7 +39,9 @@ defmodule CartaTest do
       </html>
       """)
 
-      assert {:ok, jpeg_binary} = Carta.render({:template, template_path, title: "My Post", description: "A great post"})
+      assert {:ok, jpeg_binary} =
+               Carta.render({:template, template_path, title: "My Post", description: "A great post"})
+
       assert <<0xFF, 0xD8, 0xFF, _rest::binary>> = jpeg_binary
     end
 
