@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   compile:
     name: Compile without warnings
@@ -17,15 +21,21 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install BEAM tooling with mise
+      - name: Install tooling with mise
         uses: jdx/mise-action@v3
         with:
           cache: true
 
-      - name: Install Hex and Rebar
-        run: |
-          mix local.hex --force
-          mix local.rebar --force
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          restore-keys: |
+            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
+            mix-${{ runner.os }}-
 
       - name: Fetch dependencies
         run: mix deps.get
@@ -45,15 +55,21 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install BEAM tooling with mise
+      - name: Install tooling with mise
         uses: jdx/mise-action@v3
         with:
           cache: true
 
-      - name: Install Hex and Rebar
-        run: |
-          mix local.hex --force
-          mix local.rebar --force
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          restore-keys: |
+            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
+            mix-${{ runner.os }}-
 
       - name: Fetch dependencies
         run: mix deps.get
@@ -70,15 +86,21 @@ jobs:
       - name: Check out the repository
         uses: actions/checkout@v4
 
-      - name: Install BEAM tooling with mise
+      - name: Install tooling with mise
         uses: jdx/mise-action@v3
         with:
           cache: true
 
-      - name: Install Hex and Rebar
-        run: |
-          mix local.hex --force
-          mix local.rebar --force
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-${{ hashFiles('mix.exs') }}
+          restore-keys: |
+            mix-${{ runner.os }}-${{ hashFiles('mix.lock') }}-
+            mix-${{ runner.os }}-
 
       - name: Fetch dependencies
         run: mix deps.get

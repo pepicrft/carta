@@ -31,11 +31,6 @@ jobs:
         with:
           cache: true
 
-      - name: Install Hex and Rebar
-        run: |
-          mix local.hex --force
-          mix local.rebar --force
-
       - name: Fetch dependencies
         run: mix deps.get
 
