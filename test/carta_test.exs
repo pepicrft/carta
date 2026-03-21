@@ -25,20 +25,19 @@ defmodule CartaTest do
   end
 
   describe "render/2 with template" do
-    test "renders an EEx template with assigns" do
-      template_path = Path.join(System.tmp_dir!(), "carta_test_#{:erlang.unique_integer([:positive])}.html.eex")
+    @describetag :tmp_dir
 
-      template = """
+    test "renders an EEx template with assigns", %{tmp_dir: tmp_dir} do
+      template_path = Path.join(tmp_dir, "og.html.eex")
+
+      File.write!(template_path, """
       <html>
         <body>
           <h1><%= @title %></h1>
           <p><%= @description %></p>
         </body>
       </html>
-      """
-
-      File.write!(template_path, template)
-      on_exit(fn -> File.rm(template_path) end)
+      """)
 
       assert {:ok, jpeg_binary} = Carta.render({:template, template_path, title: "My Post", description: "A great post"})
       assert <<0xFF, 0xD8, 0xFF, _rest::binary>> = jpeg_binary

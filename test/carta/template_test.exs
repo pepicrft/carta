@@ -1,14 +1,14 @@
 defmodule Carta.TemplateTest do
   use ExUnit.Case
 
+  @moduletag :tmp_dir
+
   alias Carta.Template
 
   describe "render/2" do
-    test "renders an EEx template with assigns" do
-      path = Path.join(System.tmp_dir!(), "carta_template_test_#{:erlang.unique_integer([:positive])}.html.eex")
-
+    test "renders an EEx template with assigns", %{tmp_dir: tmp_dir} do
+      path = Path.join(tmp_dir, "template.html.eex")
       File.write!(path, "<h1><%= @title %></h1>")
-      on_exit(fn -> File.rm(path) end)
 
       assert {:ok, "<h1>Hello</h1>"} = Template.render(path, title: "Hello")
     end
