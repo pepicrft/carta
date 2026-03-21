@@ -1,45 +1,21 @@
 defmodule Carta.Browser do
   @moduledoc """
-  Manages a headless Chrome/Chromium instance to capture screenshots
-  of HTML content via the Chrome DevTools Protocol (CDP).
+  Manages headless Chrome/Chromium process lifecycle.
+
+  Handles starting and stopping Chrome instances, and provides
+  screenshot capture using a CDP WebSocket connection.
   """
 
   alias Carta.CDP
 
   @doc """
-  Captures a screenshot of the given HTML content as a JPEG binary.
+  Starts a headless Chrome instance and returns its handle and CDP WebSocket URL.
 
-  Starts a headless Chrome instance, loads the HTML, takes a screenshot,
-  and shuts down Chrome.
+  The `chrome_path` can be `nil` to auto-detect.
   """
-  @spec capture(String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
-  def capture(html, opts) do
-    width = Keyword.fetch!(opts, :width)
-    height = Keyword.fetch!(opts, :height)
-    quality = Keyword.fetch!(opts, :quality)
-
-    tmp_dir = System.tmp_dir!()
-    html_path = Path.join(tmp_dir, "carta_#{:erlang.unique_integer([:positive])}.html")
-
-    try do
-      File.write!(html_path, html)
-      file_url = "file://#{html_path}"
-
-      with {:ok, chrome_pid, ws_url} <- start_chrome(opts),
-           {:ok, jpeg_binary} <- take_screenshot(ws_url, file_url, width, height, quality) do
-        stop_chrome(chrome_pid)
-        {:ok, jpeg_binary}
-      else
-        {:error, _} = error ->
-          error
-      end
-    after
-      File.rm(html_path)
-    end
-  end
-
-  defp start_chrome(opts) do
-    chrome_path = Keyword.get(opts, :chrome_path) || find_chrome()
+  @spec start(String.t() | nil) :: {:ok, term(), String.t()} | {:error, term()}
+  def start(chrome_path \\ nil) do
+    chrome_path = chrome_path || find_chrome()
 
     if is_nil(chrome_path) do
       {:error, :chrome_not_found}
@@ -75,9 +51,37 @@ defmodule Carta.Browser do
     end
   end
 
-  defp stop_chrome({pid, user_data_dir}) do
+  @doc """
+  Stops a Chrome instance previously started with `start/1`.
+  """
+  @spec stop(term()) :: :ok
+  def stop({pid, user_data_dir}) do
     Process.exit(pid, :kill)
     File.rm_rf(user_data_dir)
+    :ok
+  end
+
+  @doc """
+  Captures a screenshot using a CDP WebSocket URL from a pooled Chrome instance.
+
+  Writes the HTML to a temp file, navigates, captures, and cleans up.
+  """
+  @spec capture(String.t(), String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def capture(ws_url, html, opts) do
+    width = Keyword.fetch!(opts, :width)
+    height = Keyword.fetch!(opts, :height)
+    quality = Keyword.fetch!(opts, :quality)
+
+    tmp_dir = System.tmp_dir!()
+    html_path = Path.join(tmp_dir, "carta_#{:erlang.unique_integer([:positive])}.html")
+
+    try do
+      File.write!(html_path, html)
+      file_url = "file://#{html_path}"
+      take_screenshot(ws_url, file_url, width, height, quality)
+    after
+      File.rm(html_path)
+    end
   end
 
   defp take_screenshot(ws_url, file_url, width, height, quality) do

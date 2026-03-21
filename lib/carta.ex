@@ -5,6 +5,9 @@ defmodule Carta do
   Carta renders HTML content in a headless Chrome/Chromium browser and captures
   it as a JPEG image, ideal for generating Open Graph images for social media.
 
+  A pool of warm Chrome instances is managed automatically via the application
+  supervision tree, eliminating cold-start overhead on each render.
+
   ## Usage
 
       # Render HTML string to JPEG binary
@@ -19,15 +22,22 @@ defmodule Carta do
       # Render directly to a file
       :ok = Carta.render_to_file("<h1>Hello</h1>", "og-image.jpg")
 
+  ## Configuration
+
+      # config/config.exs
+      config :carta,
+        pool_size: 4,           # number of warm Chrome instances (default: 2)
+        chrome_path: "/usr/bin/chromium"  # auto-detected if omitted
+
   ## Options
 
     * `:width` - Viewport width in pixels (default: `1200`)
     * `:height` - Viewport height in pixels (default: `630`)
     * `:quality` - JPEG quality, 1-100 (default: `90`)
-    * `:chrome_path` - Path to Chrome/Chromium binary (auto-detected if not set)
   """
 
   alias Carta.Browser
+  alias Carta.BrowserPool
   alias Carta.Template
 
   @default_opts [
@@ -44,7 +54,13 @@ defmodule Carta do
   @spec render(String.t(), keyword()) :: {:ok, binary()} | {:error, term()}
   def render(html, opts \\ []) when is_binary(html) do
     opts = Keyword.merge(@default_opts, opts)
-    Browser.capture(html, opts)
+
+    BrowserPool.checkout(fn ws_url ->
+      case Browser.capture(ws_url, html, opts) do
+        {:ok, _binary} = ok -> {ok, :ok}
+        {:error, _} = error -> {error, :remove}
+      end
+    end)
   end
 
   @doc """
