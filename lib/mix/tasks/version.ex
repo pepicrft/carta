@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Version do
 
   use Mix.Task
 
-  @version_regex ~r/@version "(\d+)\.(\d+)\.(\d+)"/
+  @version_marker ~s(@version ")
 
   @impl Mix.Task
   def run(["current"]) do
@@ -23,9 +23,9 @@ defmodule Mix.Tasks.Version do
 
   def run(["bump", version, part]) do
     version
-    |> parse_version!()
+    |> Version.parse!()
     |> bump(part)
-    |> format_version()
+    |> to_string()
     |> IO.puts()
   end
 
@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Version do
     if current == version do
       IO.puts(version)
     else
-      updated = Regex.replace(@version_regex, contents, ~s(@version "#{version}"), global: false)
+      updated = String.replace(contents, ~s(@version "#{current}"), ~s(@version "#{version}"), global: false)
 
       if contents == updated do
         Mix.raise("Unable to update #{path} to #{version}")
@@ -57,26 +57,23 @@ defmodule Mix.Tasks.Version do
   end
 
   defp current_version!(contents) do
-    case Regex.run(@version_regex, contents, capture: :all_but_first) do
-      [major, minor, patch] -> Enum.join([major, minor, patch], ".")
-      _ -> Mix.raise("Unable to find @version in mix.exs")
+    case extract_version(contents) do
+      {:ok, version} -> version
+      :error -> Mix.raise("Unable to find @version in mix.exs")
     end
   end
 
-  defp parse_version!(version) do
-    case String.split(version, ".", parts: 3) do
-      [major, minor, patch] ->
-        {String.to_integer(major), String.to_integer(minor), String.to_integer(patch)}
-
-      _ ->
-        Mix.raise("Invalid version: #{version}")
+  defp extract_version(contents) do
+    with [_, rest] <- String.split(contents, @version_marker, parts: 2),
+         [version, _] <- String.split(rest, ~s("), parts: 2) do
+      {:ok, version}
+    else
+      _ -> :error
     end
   end
 
-  defp bump({major, _minor, _patch}, "major"), do: {major + 1, 0, 0}
-  defp bump({major, minor, _patch}, "minor"), do: {major, minor + 1, 0}
-  defp bump({major, minor, patch}, "patch"), do: {major, minor, patch + 1}
+  defp bump(version, "major"), do: %{version | major: version.major + 1, minor: 0, patch: 0}
+  defp bump(version, "minor"), do: %{version | minor: version.minor + 1, patch: 0}
+  defp bump(version, "patch"), do: %{version | patch: version.patch + 1}
   defp bump(_version, part), do: Mix.raise("Unknown bump type: #{part}")
-
-  defp format_version({major, minor, patch}), do: "#{major}.#{minor}.#{patch}"
 end
