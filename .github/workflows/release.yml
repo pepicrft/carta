@@ -31,8 +31,16 @@ jobs:
         with:
           cache: true
 
-      - name: Fetch dependencies
-        run: mix deps.get
+      - name: Install Chromium
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Fetch and compile dependencies
+        run: |
+          mix deps.get
+          mix deps.compile
+          mix compile
 
       - name: Plan release
         id: plan
