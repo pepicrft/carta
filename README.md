@@ -1,12 +1,12 @@
-# Carta
+# 🖼️ Carta
 
 Generate images from HTML templates using a headless browser.
 
 Carta renders HTML content in a headless Chrome/Chromium browser and captures it as a JPEG image. A pool of warm browser instances is managed automatically, so repeated renders avoid cold-start overhead.
 
-**Use cases:** Open Graph images, social media cards, email banners, certificates, invoices, badges — anything you can build with HTML and CSS.
+**Use cases:** 🌐 Open Graph images · 📱 Social media cards · 📧 Email banners · 📜 Certificates · 🧾 Invoices · 🏷️ Badges — anything you can build with HTML and CSS.
 
-## Installation
+## 📦 Installation
 
 Add `carta` to your list of dependencies in `mix.exs`:
 
@@ -27,7 +27,7 @@ config :carta,
   chrome_path: "/usr/bin/chromium"     # auto-detected if omitted
 ```
 
-## Usage
+## 🚀 Usage
 
 ### Render inline HTML
 
@@ -57,9 +57,9 @@ html = """
 })
 ```
 
-Since it's a full browser, everything works — Google Fonts via `<link>`, flexbox, grid, images, SVG, etc.
+Since it's a full browser, everything works — Google Fonts via `<link>`, flexbox, grid, images, SVG, etc. 🎨
 
-### Options
+### ⚙️ Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
@@ -67,7 +67,7 @@ Since it's a full browser, everything works — Google Fonts via `<link>`, flexb
 | `:height` | `630` | Viewport height in pixels |
 | `:quality` | `90` | JPEG quality (1-100) |
 
-### Caching
+### 💾 Caching
 
 Rendering is expensive. Use `Carta.cache_key/2` to derive a stable hash from the input and options, then cache the result in your own store:
 
@@ -85,6 +85,6 @@ case MyCache.get(key) do
 end
 ```
 
-## License
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
