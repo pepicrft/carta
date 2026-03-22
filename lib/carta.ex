@@ -83,7 +83,7 @@ defmodule Carta do
   def render(html, opts) when is_binary(html) do
     opts = Keyword.merge(@default_opts, opts)
 
-    Chrona.checkout(fn browser ->
+    Chrona.checkout(Carta.BrowserPool, fn browser ->
       case Chrona.Browser.capture(browser, html, opts) do
         {:ok, _binary} = ok -> {ok, :ok}
         {:error, _} = error -> {error, :remove}

@@ -34,7 +34,7 @@ defmodule Carta.MixProject do
   defp deps do
     [
       # Headless Chrome browser pool management
-      {:chrona, "~> 0.1.0"},
+      {:chrona, "~> 0.2.0"},
 
       # Development & Testing
       {:quokka, "~> 2.12", only: [:dev, :test], runtime: false},

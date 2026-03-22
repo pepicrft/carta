@@ -9,7 +9,7 @@ defmodule Carta.Application do
     chrome_path = Application.get_env(:carta, :chrome_path)
 
     children = [
-      {Chrona.BrowserPool, pool_size: pool_size, chrome_path: chrome_path}
+      {Chrona.BrowserPool, name: Carta.BrowserPool, pool_size: pool_size, chrome_path: chrome_path}
     ]
 
     Supervisor.start_link(children, strategy: :one_for_one, name: Carta.Supervisor)
