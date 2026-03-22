@@ -4,10 +4,10 @@ defmodule Carta do
 
   Carta renders HTML content in a headless Chrome/Chromium browser and captures
   it as a JPEG image. Useful for Open Graph images, social media cards, email
-  banners, certificates, invoices, badges — anything you can build with HTML and CSS.
+  banners, certificates, invoices, badges, and anything you can build with HTML and CSS.
 
-  A pool of warm Chrome instances is managed automatically via the application
-  supervision tree, eliminating cold-start overhead on each render.
+  Browser pool management is handled by [Chrona](https://hex.pm/packages/chrona),
+  which maintains a pool of warm Chrome instances to eliminate cold-start overhead.
 
   ## Usage
 
@@ -22,7 +22,7 @@ defmodule Carta do
 
   ## Caching
 
-  Rendering is expensive — it launches a browser session for each call.
+  Rendering is expensive, as it launches a browser session for each call.
   You should cache the result and only re-render when the inputs change.
   Use `cache_key/2` to derive a stable hash from the input and options,
   then use it as a key in your own cache (ETS, filesystem, CDN, etc.):
@@ -41,8 +41,10 @@ defmodule Carta do
 
   ## Configuration
 
+  Browser pool settings are configured through Chrona:
+
       # config/config.exs
-      config :carta,
+      config :chrona,
         pool_size: 4,           # number of warm Chrome instances (default: 2)
         chrome_path: "/usr/bin/chromium"  # auto-detected if omitted
 
@@ -53,8 +55,6 @@ defmodule Carta do
     * `:quality` - JPEG quality, 1-100 (default: `90`)
   """
 
-  alias Carta.Browser
-  alias Carta.BrowserPool
   alias Carta.Template
 
   @type input :: String.t() | {:template, String.t(), keyword()}
@@ -85,8 +85,8 @@ defmodule Carta do
   def render(html, opts) when is_binary(html) do
     opts = Keyword.merge(@default_opts, opts)
 
-    BrowserPool.checkout(fn browser ->
-      case Browser.capture(browser, html, opts) do
+    Chrona.checkout(fn browser ->
+      case Chrona.Browser.capture(browser, html, opts) do
         {:ok, _binary} = ok -> {ok, :ok}
         {:error, _} = error -> {error, :remove}
       end

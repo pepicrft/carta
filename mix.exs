@@ -23,8 +23,7 @@ defmodule Carta.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :eex, :inets],
-      mod: {Carta.Application, []}
+      extra_applications: [:logger, :eex]
     ]
   end
 
@@ -33,17 +32,8 @@ defmodule Carta.MixProject do
 
   defp deps do
     [
-      # Chrome process management
-      {:muontrap, "~> 1.7"},
-
-      # Browser instance pool
-      {:nimble_pool, "~> 1.1"},
-
-      # WebSocket client for Chrome DevTools Protocol
-      {:websockex, "~> 0.4"},
-
-      # Temporary file management
-      {:briefly, "~> 0.5"},
+      # Headless Chrome browser pool management
+      {:chrona, "~> 0.1.0"},
 
       # Development & Testing
       {:quokka, "~> 2.12", only: [:dev, :test], runtime: false},
