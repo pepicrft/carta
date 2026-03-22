@@ -1,5 +1,10 @@
 # 🖼️ Carta
 
+[![Hex.pm](https://img.shields.io/hexpm/v/carta.svg)](https://hex.pm/packages/carta)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/carta)
+[![CI](https://github.com/pepicrft/carta/actions/workflows/carta.yml/badge.svg)](https://github.com/pepicrft/carta/actions/workflows/carta.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Generate images from HTML templates using a headless browser.
 
 Carta renders HTML content in a headless Chrome/Chromium browser and captures it as a JPEG image. A pool of warm browser instances is managed automatically, so repeated renders avoid cold-start overhead.
