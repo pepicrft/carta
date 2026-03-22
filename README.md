@@ -4,7 +4,7 @@ Generate images from HTML templates using a headless browser.
 
 Carta renders HTML content in a headless Chrome/Chromium browser and captures it as a JPEG image. A pool of warm browser instances is managed automatically, so repeated renders avoid cold-start overhead.
 
-**Use cases:** 🌐 Open Graph images · 📱 Social media cards · 📧 Email banners · 📜 Certificates · 🧾 Invoices · 🏷️ Badges — anything you can build with HTML and CSS.
+**Use cases:** 🌐 Open Graph images · 📱 Social media cards · 📧 Email banners · 📜 Certificates · 🧾 Invoices · 🏷️ Badges · and anything you can build with HTML and CSS.
 
 ## 📦 Installation
 
@@ -57,7 +57,7 @@ html = """
 })
 ```
 
-Since it's a full browser, everything works — Google Fonts via `<link>`, flexbox, grid, images, SVG, etc. 🎨
+Since it's a full browser, everything works: Google Fonts via `<link>`, flexbox, grid, images, SVG, etc. 🎨
 
 ### ⚙️ Options
 
@@ -87,4 +87,4 @@ end
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE) for details.
