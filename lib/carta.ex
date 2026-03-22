@@ -41,10 +41,8 @@ defmodule Carta do
 
   ## Configuration
 
-  Browser pool settings are configured through Chrona:
-
       # config/config.exs
-      config :chrona,
+      config :carta,
         pool_size: 4,           # number of warm Chrome instances (default: 2)
         chrome_path: "/usr/bin/chromium"  # auto-detected if omitted
 

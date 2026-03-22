@@ -23,7 +23,8 @@ defmodule Carta.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :eex]
+      extra_applications: [:logger, :eex],
+      mod: {Carta.Application, []}
     ]
   end
 

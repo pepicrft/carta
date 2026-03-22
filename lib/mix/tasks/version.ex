@@ -1,13 +1,13 @@
-defmodule Mix.Tasks.Version do
+defmodule Mix.Tasks.Carta.Version do
   @shortdoc "Manage the project version in mix.exs"
   @moduledoc """
   Manage the project version in mix.exs.
 
   ## Usage
 
-      mix version current          # Print the current version
-      mix version bump 1.2.3 minor # Bump the given version (prints 1.3.0)
-      mix version set 2.0.0        # Update @version in mix.exs
+      mix carta.version current          # Print the current version
+      mix carta.version bump 1.2.3 minor # Bump the given version (prints 1.3.0)
+      mix carta.version set 2.0.0        # Update @version in mix.exs
   """
 
   use Mix.Task
