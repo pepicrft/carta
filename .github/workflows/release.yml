@@ -39,6 +39,8 @@ jobs:
 
       - name: Plan release
         id: plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -60,9 +62,9 @@ jobs:
           git cliff --tag "$next_version" -o CHANGELOG.next.md
 
           if [ -n "$latest_tag" ]; then
-            git cliff --tag "$next_version" --unreleased --strip all -o RELEASE_NOTES.md
+            git cliff --config .github/cliff-release.toml --tag "$next_version" --unreleased --strip all -o RELEASE_NOTES.md
           else
-            git cliff --tag "$next_version" --strip all -o RELEASE_NOTES.md
+            git cliff --config .github/cliff-release.toml --tag "$next_version" --strip all -o RELEASE_NOTES.md
           fi
 
           echo "should_release=true" >> "$GITHUB_OUTPUT"
