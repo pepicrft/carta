@@ -39,7 +39,7 @@ defmodule Carta.MixProject do
       {:briefly, "~> 0.5"},
 
       # Development & Testing
-      {:browse_chrome, "~> 0.2", only: :test, runtime: false},
+      {:browse_chrome, "~> 0.2", only: [:dev, :test], runtime: false},
       {:quokka, "~> 2.12", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.35", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
