@@ -31,11 +31,6 @@ jobs:
         with:
           cache: true
 
-      - name: Install Chromium
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-
       - name: Fetch and compile dependencies
         run: |
           mix deps.get
@@ -48,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          current_version=$(mix carta.version current)
+          current_version=$(grep '@version "' mix.exs | sed 's/.*@version "\(.*\)"/\1/')
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
 
           if [ -n "$latest_tag" ]; then
@@ -73,7 +68,12 @@ jobs:
           fi
 
           if [ -n "$latest_tag" ]; then
-            next_version=$(mix carta.version bump "$latest_tag" "$bump_type")
+            IFS='.' read -r major minor patch <<< "$latest_tag"
+            case "$bump_type" in
+              major) next_version="$((major + 1)).0.0" ;;
+              minor) next_version="${major}.$((minor + 1)).0" ;;
+              patch) next_version="${major}.${minor}.$((patch + 1))" ;;
+            esac
             git cliff --tag "$next_version" -o CHANGELOG.next.md
             git cliff --tag "$next_version" --unreleased --strip all -o RELEASE_NOTES.md
           else
@@ -90,7 +90,7 @@ jobs:
       - name: Update version and changelog
         if: steps.plan.outputs.should_release == 'true'
         run: |
-          mix carta.version set "${{ steps.plan.outputs.next_version }}"
+          sed -i "s/@version \".*\"/@version \"${{ steps.plan.outputs.next_version }}\"/" mix.exs
           mv CHANGELOG.next.md CHANGELOG.md
 
       - name: Validate Hex package

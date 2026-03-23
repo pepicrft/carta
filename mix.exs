@@ -1,7 +1,7 @@
 defmodule Carta.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @source_url "https://github.com/pepicrft/carta"
 
   def project do
@@ -14,7 +14,7 @@ defmodule Carta.MixProject do
       docs: docs(),
       package: package(),
       name: "Carta",
-      description: "Generate images from HTML templates using a headless browser",
+      description: "Generate images from HTML using a headless browser",
       source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
       aliases: aliases()
@@ -23,8 +23,7 @@ defmodule Carta.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :eex],
-      mod: {Carta.Application, []}
+      extra_applications: [:logger, :crypto]
     ]
   end
 
@@ -33,10 +32,14 @@ defmodule Carta.MixProject do
 
   defp deps do
     [
-      # Headless Chrome browser pool management
-      {:chrona, "~> 0.2.0"},
+      # Browser automation
+      {:browse, "~> 0.2.0"},
+
+      # Temporary file management
+      {:briefly, "~> 0.5"},
 
       # Development & Testing
+      {:browse_chrome, "~> 0.2", only: :test, runtime: false},
       {:quokka, "~> 2.12", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.35", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
