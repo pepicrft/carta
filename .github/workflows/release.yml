@@ -43,49 +43,30 @@ jobs:
         run: |
           set -euo pipefail
 
-          current_version=$(grep '@version "' mix.exs | sed 's/.*@version "\(.*\)"/\1/')
-          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          next_version=$(git cliff --bumped-version 2>/dev/null || true)
 
-          if [ -n "$latest_tag" ]; then
-            git cliff --context --unreleased > release-context.json
-          else
-            git cliff --context > release-context.json
-          fi
-
-          releaseable_count=$(jq 'if length == 0 then 0 else .[0].commits | length end' release-context.json)
-
-          if [ "$releaseable_count" -eq 0 ]; then
+          if [ -z "$next_version" ]; then
             echo "should_release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          if jq -e '.[0].commits[] | select(.message | test("BREAKING CHANGE|!:"))' release-context.json > /dev/null; then
-            bump_type=major
-          elif jq -e '.[0].commits[] | select(.group == "Features")' release-context.json > /dev/null; then
-            bump_type=minor
-          else
-            bump_type=patch
+          latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || true)
+
+          if [ "$next_version" = "$latest_tag" ]; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
+          git cliff --tag "$next_version" -o CHANGELOG.next.md
+
           if [ -n "$latest_tag" ]; then
-            IFS='.' read -r major minor patch <<< "$latest_tag"
-            case "$bump_type" in
-              major) next_version="$((major + 1)).0.0" ;;
-              minor) next_version="${major}.$((minor + 1)).0" ;;
-              patch) next_version="${major}.${minor}.$((patch + 1))" ;;
-            esac
-            git cliff --tag "$next_version" -o CHANGELOG.next.md
             git cliff --tag "$next_version" --unreleased --strip all -o RELEASE_NOTES.md
           else
-            next_version="$current_version"
-            git cliff --tag "$next_version" -o CHANGELOG.next.md
             git cliff --tag "$next_version" --strip all -o RELEASE_NOTES.md
           fi
 
           echo "should_release=true" >> "$GITHUB_OUTPUT"
-          echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
           echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
-          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
 
       - name: Update version and changelog
         if: steps.plan.outputs.should_release == 'true'
