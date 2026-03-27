@@ -40,6 +40,24 @@ config :browse_chrome,
 children = BrowseChrome.children()
 ```
 
+### Clone-Scoped Development Environment
+
+When you enter the repository through `mise`, Carta now exports a stable
+per-checkout instance id and a small set of clone-scoped environment variables.
+This matches the pattern used in `glossia` and keeps multiple local clones or
+worktrees from stepping on each other when a consuming app needs ports or
+database names derived from the checkout.
+
+- `CARTA_DEV_INSTANCE` is a deterministic three-digit id derived from the repo path.
+- `CARTA_SERVER_PORT` defaults to `4500 + CARTA_DEV_INSTANCE`.
+- `CARTA_SERVER_URL` defaults to `http://localhost:$CARTA_SERVER_PORT`.
+- `CARTA_TEST_PORT` defaults to `4600 + CARTA_DEV_INSTANCE`.
+- `CARTA_DB_SUFFIX` defaults to `CARTA_DEV_INSTANCE`.
+
+The chosen instance id is persisted in `.carta-dev-instance` so the same clone
+keeps the same values over time. If you need to force a specific value, export
+`CARTA_DEV_INSTANCE` before running `mise`.
+
 ## 🚀 Usage
 
 ```elixir

@@ -2,3 +2,6 @@
 erlang = "28"
 elixir = "1.19.5-otp-28"
 git-cliff = "2.12.0"
+
+[env]
+_.source = "{{config_root}}/mise/utilities/dev_instance_env.sh"
