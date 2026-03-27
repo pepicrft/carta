@@ -1,6 +1,12 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.2.0] - 2026-03-27
+
+### Features
+
+- feat: set viewport dimensions before screenshot capture (#5)
+
 ## [0.1.2] - 2026-03-23
 
 ### Bug Fixes
