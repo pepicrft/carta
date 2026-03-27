@@ -95,7 +95,8 @@ defmodule Carta do
 
     Browse.checkout(pool, fn browser ->
       with {:ok, html_path} <- write_temp_html(html),
-           :ok <- Browse.navigate(browser, "file://#{html_path}") do
+           :ok <- Browse.navigate(browser, "file://#{html_path}"),
+           :ok <- Browse.set_viewport(browser, width, height) do
         Browse.capture_screenshot(browser,
           format: "jpeg",
           quality: quality,
